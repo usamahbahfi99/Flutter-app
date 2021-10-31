@@ -182,7 +182,7 @@ In this step, you’ll expand _RandomWordsState to generate and display a list o
          );
        }
   5. In the MyApp class, update the build() method by changing the title, and changing the home to be a RandomWords widget:
-      10  class MyApp extends StatelessWidget {
+      10.  class MyApp extends StatelessWidget {
       11	    @override
       12	    Widget build(BuildContext context) {
       13	      return MaterialApp(
