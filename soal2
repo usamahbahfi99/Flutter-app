@@ -1,0 +1,199 @@
+4. Add icons to the list
+
+In this step, you'll add heart icons to each row. In the next step, you'll make them tappable and save the favorites.
+
+Add a _saved Set to _RandomWordsState. This Set stores the word pairings that the user favorited. Set is preferred to List because a properly implemented Set doesn't allow duplicate entries.
+
+class _RandomWordsState extends State<RandomWords> {
+  final _suggestions = <WordPair>[];
+  final _saved = <WordPair>{};     // NEW
+  final _biggerFont = TextStyle(fontSize: 18.0);
+  ...
+}
+
+In the _buildRow function, add an alreadySaved check to ensure that a word pairing has not already been added to favorites.
+
+Widget _buildRow(WordPair pair) {
+  final alreadySaved = _saved.contains(pair);  // NEW
+  ...
+}
+
+In _buildRow() , you'll also add heart-shaped icons to the ListTile objects to enable favoriting. In the next step, you'll add the ability to interact with the heart icons.
+
+Add the icons after the text, as shown below:
+
+Widget _buildRow(WordPair pair) {
+  final alreadySaved = _saved.contains(pair);
+  return ListTile(
+    title: Text(
+      pair.asPascalCase,
+      style: _biggerFont,
+    ),
+    trailing: Icon(   // NEW from here... 
+      alreadySaved ? Icons.favorite : Icons.favorite_border,
+      color: alreadySaved ? Colors.red : null,
+      semanticLabel: alreadySaved ? 'Remove from saved' : 'Save',
+    ),                // ... to here.
+  );
+}
+
+Hot reload the app.
+
+You should now see open hearts on each row, but they are not yet interactive.
+
+5. Add interactivity
+
+In this step, you'll make the heart icons tappable. When the user taps an entry in the list, toggling its favorited state, that word pairing is added or removed from a set of saved favorites.
+
+To do that, you'll modify the _buildRow function. If a word entry has already been added to favorites, tapping it again removes it from favorites. When a tile has been tapped, the function calls setState() to notify the framework that state has changed.
+
+Add onTap to the _buildRow method, as shown below:
+
+Widget _buildRow(WordPair pair) {
+  final alreadySaved = _saved.contains(pair);
+  return ListTile(
+    title: Text(
+      pair.asPascalCase,
+      style: _biggerFont,
+    ),
+    trailing: Icon(
+      alreadySaved ? Icons.favorite : Icons.favorite_border,
+      color: alreadySaved ? Colors.red : null,
+      semanticLabel: alreadySaved ? 'Remove from saved' : 'Save',
+    ),
+    onTap: () {      // NEW lines from here...
+      setState(() {
+        if (alreadySaved) {
+          _saved.remove(pair);
+        } else { 
+          _saved.add(pair); 
+        } 
+      });
+    },               // ... to here.
+  );
+}
+
+Tip: In Flutter's reactive style framework, calling setState() triggers a call to the build() method for the State object, resulting in an update to the UI.
+
+Hot reload the app.
+
+You should be able to tap any tile to favorite or unfavorite the entry. Tapping a tile generates an implicit ink splash animation emanating from the tap point.
+
+6. Navigate to a new screen
+
+In this step, you'll add a new page (called a route in Flutter) that displays the favorites. You'll learn how to navigate between the home route and the new route.
+
+In Flutter, the Navigator manages a stack containing the app's routes. Pushing a route onto the Navigator's stack updates the display to that route. Popping a route from the Navigator's stack returns the display to the previous route.
+
+Next, you'll add a list icon to the AppBar in the build method for _RandomWordsState. When the user clicks the list icon, a new route that contains the saved favorites is pushed to the Navigator, displaying the icon.
+
+Add the icon and its corresponding action to the build method:
+
+class _RandomWordsState extends State<RandomWords> {
+  ...
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Startup Name Generator'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.list),
+            onPressed: _pushSaved,
+            tooltip: 'Saved Suggestions',
+          ),
+        ],
+      ),
+      body: _buildSuggestions(),
+    );
+  }
+  ...
+}
+
+Tip: Some widget properties take a single widget (child), and other properties, such as action, take an array of widgets (children), as indicated by the square brackets ([]).
+
+Add a _pushSaved() function to the _RandomWordsState class.
+
+  void _pushSaved() {
+  }
+Hot reload the app. The list icon a114478ae13b853.png appears in the app bar. Tapping it does nothing yet because the _pushSaved function is empty.
+
+Next, you'll build a route and push it to the Navigator's stack. That action changes the screen to display the new route. The content for the new page is built in MaterialPageRoute's builder property in an anonymous function.
+
+Call Navigator.push, as shown below, which pushes the route to the Navigator's stack. The IDE will complain about invalid code, but you will fix that in the next section.
+
+void _pushSaved() {
+  Navigator.of(context).push(
+  );
+}
+
+As a quick aside, you may be wondering what the context argument of the Navigator.of call is. And we just happen to have a quick video explaining what the BuildContext is.
+
+Next, you'll add the MaterialPageRoute and its builder. For now, add the code that generates the ListTile rows. The divideTiles() method of ListTile adds horizontal spacing between each ListTile. The divided variable holds the final rows converted to a list by the convenience function, toList().
+
+Add the code, as shown in the following code snippet:
+
+  void _pushSaved() {
+    Navigator.of(context).push(
+      // Add lines from here...
+      MaterialPageRoute<void>(
+        builder: (context) {
+          final tiles = _saved.map(
+            (pair) {
+              return ListTile(
+                title: Text(
+                  pair.asPascalCase,
+                  style: _biggerFont,
+                ),
+              );
+            },
+          );
+          final divided = tiles.isNotEmpty
+              ? ListTile.divideTiles(
+                  context: context,
+                  tiles: tiles,
+                ).toList()
+              : <Widget>[];
+
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Saved Suggestions'),
+            ),
+            body: ListView(children: divided),
+          );
+        },
+      ), // ...to here.
+    );
+  }
+  
+The builder property returns a Scaffold containing the app bar for the new route named SavedSuggestions. The body of the new route consists of a ListView containing the ListTiles rows. Each row is separated by a divider.
+
+Hot reload the app. Favorite some of the selections and tap the list icon in the app bar. The new route appears containing the favorites. Note that the Navigator adds a "Back" button to the app bar. You did not have to explicitly implement Navigator.pop. Tap the back button to return to the home route.
+
+7. Change the UI using themes
+
+In this step, you'll modify the app's theme. The theme controls the look and feel of your app. You can either use the default theme, which is dependent on the physical device or emulator, or customize the theme to reflect your branding.
+
+You can easily change an app's theme by configuring the ThemeData class. The app uses the default theme, but you'll change the app's primary color to white.
+
+Change the color in the MyApp class:
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Startup Name Generator',
+      theme: ThemeData(          // Add the 5 lines from here... 
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+        ),
+      ),                         // ... to here.
+      home: RandomWords(),
+    );
+  }
+}
+
+Hot reload the app. The entire background is now white, even the app bar.
+
+As an exercise, use ThemeData to change other aspects of the UI. The Colors class in the Material library provides many color constants that you can play with. Hot reload makes experimenting with the UI quick and easy.
